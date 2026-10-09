@@ -47,7 +47,10 @@ flagcxResult_t ixcudaAdaptorDeviceMalloc(void **ptr, size_t size,
                                          flagcxMemType_t type,
                                          flagcxStream_t stream) {
   if (type == flagcxMemHost) {
-    DEVCHECK(cudaMallocHost(ptr, size));
+    // Mapped host memory: the device-API proxy maps this FIFO with
+    // cudaHostGetDevicePointer. cudaGetDeviceFlags omits cudaDeviceMapHost
+    // on ivcore11, but cudaHostAlloc(Mapped) still provides the mapping.
+    DEVCHECK(cudaHostAlloc(ptr, size, cudaHostAllocMapped));
   } else if (type == flagcxMemManaged) {
     DEVCHECK(cudaMallocManaged(ptr, size, cudaMemAttachGlobal));
   } else {
@@ -93,6 +96,13 @@ flagcxResult_t ixcudaAdaptorGetDeviceCount(int *count) {
 
 flagcxResult_t ixcudaAdaptorGetVendor(char *vendor) {
   strcpy(vendor, "ILUVATAR_COREX");
+  return flagcxSuccess;
+}
+
+flagcxResult_t ixcudaAdaptorHostGetDevicePointer(void **pDevice, void *pHost) {
+  if (pDevice == NULL || pHost == NULL)
+    return flagcxInvalidArgument;
+  DEVCHECK(cudaHostGetDevicePointer(pDevice, pHost, 0));
   return flagcxSuccess;
 }
 
@@ -338,11 +348,49 @@ flagcxResult_t ixcudaAdaptorEventElapsedTime(float *, flagcxEvent_t,
   return flagcxNotSupported;
 }
 
+// Same-node barriers stay on IPC while FLAGCX_SIGNAL_HOST_ENABLE=0.
+// The device-API FIFO still needs hostGetDevicePointer, implemented above.
 flagcxResult_t ixcudaAdaptorHostRegister(void *, size_t) {
   return flagcxNotSupported;
 }
 flagcxResult_t ixcudaAdaptorHostUnregister(void *) {
   return flagcxNotSupported;
+}
+
+flagcxResult_t ixcudaAdaptorLaunchKernel(void *func, unsigned int block_x,
+                                        unsigned int block_y,
+                                        unsigned int block_z,
+                                        unsigned int grid_x, unsigned int grid_y,
+                                        unsigned int grid_z, void **args,
+                                        size_t share_mem, void *stream,
+                                        void *memHandle) {
+  (void)memHandle;
+  if (func == NULL)
+    return flagcxInvalidArgument;
+  cudaStream_t cudaStream = NULL;
+  if (stream != NULL)
+    cudaStream = static_cast<flagcxStream_t>(stream)->base;
+  cudaError_t err =
+      cudaLaunchKernel(func, dim3(grid_x, grid_y, grid_z),
+                       dim3(block_x, block_y, block_z), args, share_mem,
+                       cudaStream);
+  if (err != cudaSuccess)
+    return flagcxUnhandledDeviceError;
+  return flagcxSuccess;
+}
+
+flagcxResult_t ixcudaAdaptorLaunchDeviceFunc(flagcxStream_t stream,
+                                            flagcxLaunchFunc_t fn, void *args) {
+  if (fn == NULL)
+    return flagcxInvalidArgument;
+  if (stream != NULL)
+    fn(stream, args);
+  return flagcxSuccess;
+}
+
+flagcxResult_t ixcudaAdaptorGetLastError() {
+  cudaError_t err = cudaGetLastError();
+  return err == cudaSuccess ? flagcxSuccess : flagcxSystemError;
 }
 
 // Symmetric memory VMM stubs (not supported)
@@ -412,7 +460,8 @@ struct flagcxDeviceAdaptor ixcudaAdaptor {
       ixcudaAdaptorDeviceSynchronize, ixcudaAdaptorDeviceMemcpy,
       ixcudaAdaptorDeviceMemset, ixcudaAdaptorDeviceMalloc,
       ixcudaAdaptorDeviceFree, ixcudaAdaptorSetDevice, ixcudaAdaptorGetDevice,
-      ixcudaAdaptorGetDeviceCount, ixcudaAdaptorGetVendor, NULL,
+      ixcudaAdaptorGetDeviceCount, ixcudaAdaptorGetVendor,
+      ixcudaAdaptorHostGetDevicePointer,
       // GDR functions
       NULL, // flagcxResult_t (*memHandleInit)(int dev_id, void **memHandle);
       NULL, // flagcxResult_t (*memHandleDestroy)(int dev, void *memHandle);
@@ -438,14 +487,10 @@ struct flagcxDeviceAdaptor ixcudaAdaptor {
       ixcudaAdaptorIpcMemHandleOpen, ixcudaAdaptorIpcMemHandleClose,
       ixcudaAdaptorIpcMemHandleFree,
       // Kernel launch
-      NULL, // flagcxResult_t (*launchKernel)(void *func, unsigned int block_x,
-            // unsigned int block_y, unsigned int block_z, unsigned int grid_x,
-            // unsigned int grid_y, unsigned int grid_z, void **args, size_t
-            // share_mem, void *stream, void *memHandle);
+      ixcudaAdaptorLaunchKernel,
       NULL, // flagcxResult_t (*copyArgsInit)(void **args);
       NULL, // flagcxResult_t (*copyArgsFree)(void *args);
-      NULL, // flagcxResult_t (*launchDeviceFunc)(flagcxStream_t stream, void
-            // *args);
+      ixcudaAdaptorLaunchDeviceFunc,
       // Others
       ixcudaAdaptorGetDeviceProperties, // flagcxResult_t
                                         // (*getDeviceProperties)(struct
@@ -471,7 +516,7 @@ struct flagcxDeviceAdaptor ixcudaAdaptor {
       ixcudaAdaptorSymMulticastSupported, ixcudaAdaptorSymMulticastCreate,
       ixcudaAdaptorSymMulticastBind, ixcudaAdaptorSymMulticastTeardown,
       ixcudaAdaptorSymMulticastFree,
-      NULL, // flagcxResult_t (*getLastError)();
+      ixcudaAdaptorGetLastError,
       ixcudaAdaptorGetPointerType,
       flagcxDeviceAdaptorGetAddressRangeNotSupported, FLAGCX_VMM_MR_CAP_NONE,
       FLAGCX_DEVICE_ADAPTOR_INTERNAL_NONE, NULL, NULL, NULL, NULL, NULL,

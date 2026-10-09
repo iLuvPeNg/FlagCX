@@ -158,6 +158,10 @@ struct PlatformTraits<IluvatarPlatform> {
     FLAGCX_DEVICE_INLINE_DECORATOR static T
     load(T *ptr, flagcxDeviceMemoryOrder_t order) {
       (void)Scope;
+      // ivcore11 llc cannot select a 64-bit atomic load. Aligned 64-bit
+      // publication uses volatile loads; 32-bit relaxed loads stay atomic.
+      if (sizeof(T) != sizeof(uint32_t))
+        return *const_cast<volatile T *>(ptr);
       switch (order) {
         case flagcxDeviceMemoryOrderRelaxed:
         case flagcxDeviceMemoryOrderRelease:
@@ -174,6 +178,12 @@ struct PlatformTraits<IluvatarPlatform> {
     FLAGCX_DEVICE_INLINE_DECORATOR static void
     store(T *ptr, const T &value, flagcxDeviceMemoryOrder_t order) {
       (void)Scope;
+      if (sizeof(T) != sizeof(uint32_t)) {
+        if (order != flagcxDeviceMemoryOrderRelaxed)
+          FLAGCX_DEVICE_THREAD_FENCE();
+        *const_cast<volatile T *>(ptr) = value;
+        return;
+      }
       if (order == flagcxDeviceMemoryOrderRelaxed) {
         __atomic_store_n(ptr, value, __ATOMIC_RELAXED);
         return;

@@ -8,7 +8,11 @@
 DEVICE_HOME  ?= /usr/local/corex
 DEVICE_LIB   := $(DEVICE_HOME)/lib
 DEVICE_INCLUDE := $(DEVICE_HOME)/include
-DEVICE_LINK  := -lcudart -lcuda
+# CoreX libibverbs.so.1 references versioned libnl symbols (rtnl_*@libnl_3).
+# Ubuntu 24.04's libnl exports those symbols without that version tag, and
+# ld.bfd rejects the mismatch unless shared-library undefined symbols are
+# allowed. Runtime resolution still uses libnl-route-3.
+DEVICE_LINK  := -lcudart -lcuda -Wl,--allow-shlib-undefined
 DEVICE_PLATFORM := ILUVATAR
 ILUVATAR_ARCH ?= ivcore11
 COREX_CLANG ?= $(DEVICE_HOME)/bin/clang
