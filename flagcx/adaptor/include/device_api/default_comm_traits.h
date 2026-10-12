@@ -1050,6 +1050,24 @@ struct CommTraits<DefaultBackend<PlatformTag>> {
       int idx = _contextId * counterCount + (int)counterId;
       Atomic::store(&_dc.getCompletionCounterBuffer()[idx], CompletionWord{0},
                     flagcxDeviceMemoryOrderRelease);
+      // 32-bit completions keep a host-mapped proxy word beside the device
+      // word. ivcore11 cannot emit a system fence, and a device store to that
+      // host word is not visible to the following load. Publish 0 from the
+      // proxy thread instead, and do not return until this thread observes it.
+      // The store is queued behind earlier FIFO entries, so a counter
+      // increment still in flight cannot land after the reset.
+      if (sizeof(CompletionWord) == sizeof(uint32_t) && fifoBuffer != nullptr &&
+          counterBuffer != nullptr) {
+        enqueueFifoSignal((int)counterId, 0, 0, /*bufferType=*/2);
+        int iter = 0;
+        while (loadCounterValue(idx, flagcxDeviceMemoryOrderAcquire) !=
+               CompletionWord{0}) {
+          if (fifoTerminalStatus((uint64_t *)fifoBuffer) != flagcxSuccess)
+            break;
+          Intrin::spinBackoff(iter++);
+        }
+        return;
+      }
       CompletionStorage::template resetProxy<Atomic>(
           counterBuffer, idx, flagcxDeviceMemoryOrderRelease);
     }
