@@ -16,8 +16,13 @@ DEVICE_LINK  := -lcudart -lcuda -Wl,--allow-shlib-undefined
 DEVICE_PLATFORM := ILUVATAR
 ILUVATAR_ARCH ?= ivcore11
 COREX_CLANG ?= $(DEVICE_HOME)/bin/clang
-DEVICE_COMPILER := $(COREX_CLANG)
-DEVICE_COMPILE_FLAG := -c -x ivcore --cuda-path=$(DEVICE_HOME) \
+# clang's -x applies only to inputs that follow it, and the root kernel rule
+# puts the source before DEVICE_COMPILE_FLAG. Carrying -x ivcore on the
+# compiler keeps it ahead of the source without reordering the shared rule.
+# DEVICE_LINKER inherits this, but Iluvatar sets DEVICE_NEEDS_DLINK := 0 and
+# is not USE_DU, so the linker never runs.
+DEVICE_COMPILER := $(COREX_CLANG) -x ivcore
+DEVICE_COMPILE_FLAG := -c --cuda-path=$(DEVICE_HOME) \
     --cuda-gpu-arch=$(ILUVATAR_ARCH) -std=c++17 -O2 -fPIC -MMD -MP \
     -DFLAGCX_ILUVATAR_DEVICE_COMPILE=1
 DEVICE_LINK_FLAG :=

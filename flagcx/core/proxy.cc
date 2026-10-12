@@ -2369,14 +2369,7 @@ init_done:
             size_t counterOffset = (size_t)signalIdx;
             uint64_t *counterPtr =
                 (uint64_t *)dc->counterBuffer + counterOffset;
-            // bufferType 2 stores an absolute value. Device reset uses it
-            // because a device store of this host-mapped word is not visible
-            // to the following device load. The device waits until it
-            // observes the stored value.
-            if (bufType == 2)
-              __atomic_store_n(counterPtr, signalValue, __ATOMIC_SEQ_CST);
-            else
-              __atomic_fetch_add(counterPtr, signalValue, __ATOMIC_RELEASE);
+            __atomic_fetch_add(counterPtr, signalValue, __ATOMIC_RELEASE);
           }
           break;
         }
