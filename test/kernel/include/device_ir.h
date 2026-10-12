@@ -52,56 +52,56 @@
 // =========================================================================
 
 // S1: Comm Queries — rank, size, intraRank, intraSize
-void launchKernelCommQueriesS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelCommQueriesS(const void *devCommPtr,
                               int *devResults, flagcxStream_t stream);
 
 // S2: Coop Groups — block, tile_span, lanes (results[0..2] = pass flags)
-void launchKernelCoopGroupsS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelCoopGroupsS(const void *devCommPtr,
                              int *devResults, flagcxStream_t stream);
 
 // S3: Team Queries — writes intraRank, worldRank to results[0..1]
-void launchKernelTeamQueriesS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelTeamQueriesS(const void *devCommPtr,
                               int *devResults, flagcxStream_t stream);
 
 // S4: Local Pointer — verifies localPtr == rawBuff
-void launchKernelLocalPointerS(const void FLAGCX_IR_GLOBAL_PTR *devMemPtr,
+void launchKernelLocalPointerS(const void *devMemPtr,
                                void *rawBuff, int *devResults,
                                flagcxStream_t stream);
 
 // S5: Intra Pointer — reads peer's data via intra pointer
-void launchKernelIntraPointerS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                               const void FLAGCX_IR_GLOBAL_PTR *devMemPtr,
+void launchKernelIntraPointerS(const void *devCommPtr,
+                               const void *devMemPtr,
                                float *devOutput, int count,
                                flagcxStream_t stream);
 
 // S6: Peer Pointer — team-based peer memory access
-void launchKernelPeerPointerS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                              const void FLAGCX_IR_GLOBAL_PTR *devMemPtr,
+void launchKernelPeerPointerS(const void *devCommPtr,
+                              const void *devMemPtr,
                               float *devOutput, int count,
                               flagcxStream_t stream);
 
 // S7: Multicast Pointer — NVLS-dependent, commented out
-// void launchKernelMulticastPointerS(const void FLAGCX_IR_GLOBAL_PTR
+// void launchKernelMulticastPointerS(const void
 // *devCommPtr,
-//                                    const void FLAGCX_IR_GLOBAL_PTR
+//                                    const void
 //                                    *devMemPtr, float *devOutput, int nBlocks,
 //                                    int nThreads, flagcxStream_t stream);
 
 // S8: Intra Barrier Sync — write buffer, barrier, read peer
-void launchKernelIntraBarrierSyncS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *devMemPtr,
+void launchKernelIntraBarrierSyncS(const void *devCommPtr,
+                                   const void *devMemPtr,
                                    float *buffer, float *output, int N,
                                    flagcxStream_t stream);
 
 // S9: Intra Barrier Arrive/Wait — SyncS(Release) + read + SyncS(Acquire)
 void launchKernelIntraBarrierArriveWaitS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *devMemPtr, float *buffer, float *output,
+    const void *devCommPtr,
+    const void *devMemPtr, float *buffer, float *output,
     int N, flagcxStream_t stream);
 
 // S10: Intra AllReduce — composite using barriers + pointers
-void launchKernelIntraAllReduceS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                 const void FLAGCX_IR_GLOBAL_PTR *devMemPtr,
+void launchKernelIntraAllReduceS(const void *devCommPtr,
+                                 const void *devMemPtr,
                                  float *buffer, int count,
                                  flagcxStream_t stream);
 
@@ -110,94 +110,94 @@ void launchKernelIntraAllReduceS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
 // =========================================================================
 
 // S1: Transport Handle — verify NetGetFromCommS non-null
-void launchKernelNetGetFromCommS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelNetGetFromCommS(const void *devCommPtr,
                                  int *devResults, flagcxStream_t stream);
 
 // S2: Signal/Counter Reset — read/reset/shadow
-void launchKernelNetResetS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelNetResetS(const void *devCommPtr,
                            int *devResults, flagcxStream_t stream);
 
 // S3: Put + SigInc — PutS_RSigInc + WaitSignalS + FlushS
-void launchKernelNetPutSignalIncS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                  const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-                                  const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr,
+void launchKernelNetPutSignalIncS(const void *devCommPtr,
+                                  const void *sendMemPtr,
+                                  const void *recvMemPtr,
                                   size_t countPerPeer, flagcxStream_t stream);
 
 #ifdef USE_NVIDIA_ADAPTOR
 // S3b: one independent put+signal+wait+flush chain per transport context.
 void launchKernelNetMultiContextPutSignalIncS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr, size_t dataBase,
+    const void *devCommPtr,
+    const void *sendMemPtr,
+    const void *recvMemPtr, size_t dataBase,
     int *devResults, flagcxStream_t stream);
 #endif
 
 // S4: Put + SigAdd — PutS_RSigAdd + WaitSignalS + FlushS
-void launchKernelNetPutSignalAddS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                  const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-                                  const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr,
+void launchKernelNetPutSignalAddS(const void *devCommPtr,
+                                  const void *sendMemPtr,
+                                  const void *recvMemPtr,
                                   size_t countPerPeer, flagcxStream_t stream);
 
 // S5: Put + SigInc + CtrInc — PutS_RSigInc_LCtrInc + WaitSignalS + WaitCounterS
 // + FlushS
 void launchKernelNetCounterPipelineS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr, size_t countPerPeer,
+    const void *devCommPtr,
+    const void *sendMemPtr,
+    const void *recvMemPtr, size_t countPerPeer,
     flagcxStream_t stream);
 
 // S6: Put(None) + Flush + Signal (FlushDecouple) — PutS + FlushS +
 // SignalSigIncS + WaitSignalS + FlushS
-void launchKernelNetFlushDecoupleS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr,
+void launchKernelNetFlushDecoupleS(const void *devCommPtr,
+                                   const void *sendMemPtr,
+                                   const void *recvMemPtr,
                                    size_t countPerPeer, flagcxStream_t stream);
 
 // S7: PutValue — PutValueS(None)+Signal then PutValueS_RSigInc (both in one
 // kernel)
-void launchKernelNetPutValueS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                              const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr,
+void launchKernelNetPutValueS(const void *devCommPtr,
+                              const void *recvMemPtr,
                               size_t putValBase, flagcxStream_t stream);
 
 // S8: Get — GetS + FlushS
-void launchKernelNetGetS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                         const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-                         const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr,
+void launchKernelNetGetS(const void *devCommPtr,
+                         const void *sendMemPtr,
+                         const void *recvMemPtr,
                          size_t countPerPeer, flagcxStream_t stream);
 
 // S9: Signal — SignalSigIncS + SignalSigAddS + WaitSignalS (both in one kernel)
-void launchKernelNetSignalS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelNetSignalS(const void *devCommPtr,
                             flagcxStream_t stream);
 
 // S10: Shadow (commented — MeetShadowS)
 void launchKernelNetWaitSignalMeetShadowS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, flagcxStream_t stream);
+    const void *devCommPtr, flagcxStream_t stream);
 
 // S11: WaitSignal + Flush (standalone)
 void launchKernelNetWaitSignalFlushS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, flagcxStream_t stream);
+    const void *devCommPtr, flagcxStream_t stream);
 
 // S12: Inter Barrier — stress test
-void launchKernelInterBarrierS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelInterBarrierS(const void *devCommPtr,
                                int *devResults, int nIters,
                                flagcxStream_t stream);
 
 // S13: World Barrier — sync + arrive/wait split
-void launchKernelWorldBarrierS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
+void launchKernelWorldBarrierS(const void *devCommPtr,
                                flagcxStream_t stream);
 
 // S14: AlltoAll (one-sided composite) — put + signal + wait + flush + world
 // barrier
 void launchKernelNetOneSidedAlltoAllS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr, size_t countPerPeer,
+    const void *devCommPtr,
+    const void *sendMemPtr,
+    const void *recvMemPtr, size_t countPerPeer,
     flagcxStream_t stream);
 
 // S15: AlltoAll (two-sided, commented)
-// void launchKernelNetTwoSidedS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-// const void FLAGCX_IR_GLOBAL_PTR *sendMemPtr,
-//                               const void FLAGCX_IR_GLOBAL_PTR *recvMemPtr,
+// void launchKernelNetTwoSidedS(const void *devCommPtr,
+// const void *sendMemPtr,
+//                               const void *recvMemPtr,
 //                               size_t countPerPeer, flagcxStream_t stream);
 
 // =========================================================================
@@ -206,52 +206,52 @@ void launchKernelNetOneSidedAlltoAllS(
 // =========================================================================
 
 // S18: DevPut — INTRA + WORLD
-void launchKernelDevPutIntraWorldS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr,
+void launchKernelDevPutIntraWorldS(const void *devCommPtr,
+                                   const void *dstMemPtr,
+                                   const void *srcMemPtr,
                                    int *devResult, size_t bytes,
                                    flagcxStream_t stream);
 
 // S19: DevGet — INTRA + WORLD
 void launchKernelDevGetIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *remoteMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *localMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *remoteMemPtr,
+    const void *localMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S21: DevPutSignalWait — INTRA + WORLD
 void launchKernelDevPutSignalWaitIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S16: DevBarrier — INTRA + WORLD
 void launchKernelDevBarrierIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S16: DevBarrierArriveWait — INTRA + WORLD
 void launchKernelDevBarrierArriveWaitIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S18: DevPutValue — INTRA + WORLD
 void launchKernelDevPutValueIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S20: DevSignalStandalone — INTRA + WORLD
 void launchKernelDevSignalStandaloneIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S17: DevTeamResolution — INTRA + WORLD
 void launchKernelDevTeamResolutionIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult,
     flagcxStream_t stream);
 
 // =========================================================================
@@ -260,52 +260,52 @@ void launchKernelDevTeamResolutionIntraWorldS(
 // =========================================================================
 
 // S18: DevPut — INTER + WORLD
-void launchKernelDevPutInterWorldS(const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-                                   const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr,
+void launchKernelDevPutInterWorldS(const void *devCommPtr,
+                                   const void *dstMemPtr,
+                                   const void *srcMemPtr,
                                    int *devResult, size_t bytes,
                                    flagcxStream_t stream);
 
 // S19: DevGet — INTER + WORLD
 void launchKernelDevGetInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *remoteMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *localMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *remoteMemPtr,
+    const void *localMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S21: DevPutSignalWait — INTER + WORLD
 void launchKernelDevPutSignalWaitInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S16: DevBarrier — INTER + WORLD
 void launchKernelDevBarrierInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S16: DevBarrierArriveWait — INTER + WORLD
 void launchKernelDevBarrierArriveWaitInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S18: DevPutValue — INTER + WORLD
 void launchKernelDevPutValueInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S20: DevSignalStandalone — INTER + WORLD
 void launchKernelDevSignalStandaloneInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S17: DevTeamResolution — INTER + WORLD
 void launchKernelDevTeamResolutionInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult,
     flagcxStream_t stream);
 
 // =========================================================================
@@ -314,56 +314,56 @@ void launchKernelDevTeamResolutionInterWorldS(
 
 // S22: DevPut_RSigInc + DevPut_RSigAdd — INTRA + WORLD
 void launchKernelDevPutRSigIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S22: DevPut_RSigInc + DevPut_RSigAdd — INTER + WORLD
 void launchKernelDevPutRSigInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S23: DevPut_LCtrInc + DevPut_RSigInc_LCtrInc + DevPut_RSigAdd_LCtrInc — INTRA
 // + WORLD
 void launchKernelDevPutCounterIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S23: DevPut_LCtrInc + DevPut_RSigInc_LCtrInc + DevPut_RSigAdd_LCtrInc — INTER
 // + WORLD
 void launchKernelDevPutCounterInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *srcMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr,
+    const void *srcMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S24: DevPutValue_RSigInc + DevPutValue_RSigAdd — INTRA + WORLD
 void launchKernelDevPutValueRSigIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S24: DevPutValue_RSigInc + DevPutValue_RSigAdd — INTER + WORLD
 void launchKernelDevPutValueRSigInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr,
-    const void FLAGCX_IR_GLOBAL_PTR *dstMemPtr, int *devResult, size_t bytes,
+    const void *devCommPtr,
+    const void *dstMemPtr, int *devResult, size_t bytes,
     flagcxStream_t stream);
 
 // S25: DevIncreaseSignalShadow + DevWaitSignalMeetShadow + DevFlush — INTRA +
 // WORLD
 void launchKernelDevSignalShadowFlushIntraWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 // S25: DevIncreaseSignalShadow + DevWaitSignalMeetShadow + DevFlush — INTER +
 // WORLD
 void launchKernelDevSignalShadowFlushInterWorldS(
-    const void FLAGCX_IR_GLOBAL_PTR *devCommPtr, int *devResult,
+    const void *devCommPtr, int *devResult,
     flagcxStream_t stream);
 
 #endif // TEST_KERNEL_DEVICE_IR_H_

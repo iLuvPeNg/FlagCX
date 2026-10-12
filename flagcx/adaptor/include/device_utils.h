@@ -45,15 +45,19 @@
 // pointers) in global address space 1. Keep this separate from
 // FLAGCX_DEVICE_GLOBAL_PTR: the latter is also used by by-value C++ layouts,
 // where changing the pointer type would alter the shared host/device ABI.
-#if defined(USE_ILUVATAR_ADAPTOR) && defined(FLAGCX_ILUVATAR_DEVICE_COMPILE) && \
-    defined(__CUDA_ARCH__)
+// Present on both CoreX passes. The host pass still type-checks __global__
+// bodies, and ixLaunchKernel finds the device kernel by the host stub's
+// mangled name, so address space 1 has to appear in both.
+#if defined(USE_ILUVATAR_ADAPTOR) && defined(FLAGCX_ILUVATAR_DEVICE_COMPILE)
 #define FLAGCX_IR_GLOBAL_PTR __attribute__((address_space(1)))
 #define FLAGCX_IR_GLOBAL_RETURN_PTR __attribute__((address_space(1)))
+#define FLAGCX_IR_KERNEL_PTR __attribute__((address_space(1)))
 #define FLAGCX_IR_GLOBAL_PTR_CAST(type, ptr)                                   \
   ((FLAGCX_IR_GLOBAL_PTR type *)(ptr))
 #else
 #define FLAGCX_IR_GLOBAL_PTR
 #define FLAGCX_IR_GLOBAL_RETURN_PTR FLAGCX_DEVICE_GLOBAL_PTR
+#define FLAGCX_IR_KERNEL_PTR FLAGCX_IR_GLOBAL_PTR
 #define FLAGCX_IR_GLOBAL_PTR_CAST(type, ptr)                                   \
   FLAGCX_DEVICE_GLOBAL_PTR_CAST(type, ptr)
 #endif
