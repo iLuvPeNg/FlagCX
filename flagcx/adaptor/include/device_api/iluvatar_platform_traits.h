@@ -150,45 +150,25 @@ struct PlatformTraits<IluvatarPlatform> {
 
   struct Atomic {
     // FlagTree PR 1184 validates aligned load/store and 32-bit CoreX RMW.
-    // Acquire polling therefore uses volatile loads, release publication
-    // fences before the volatile store, and RMW is deliberately restricted
-    // to uint32_t. DefaultBackend selects this width at compile time; no
-    // unsupported 64-bit RMW is emitted for ivcore11.
+    // ivcore11 llc cannot select LLVM AtomicLoad/AtomicStore on addrspace 1.
+    // Naturally aligned loads and stores are atomic in hardware (no word tearing);
+    // volatile prevents compiler register caching. Relaxed needs no fence;
+    // Release/AcqRel/SeqCst store fences before writing to ensure prior writes
+    // are visible. 32-bit RMW operations remain hardware atomic primitives.
     template <typename T, flagcxDeviceScope_t Scope = flagcxDeviceScopeSystem>
     FLAGCX_DEVICE_INLINE_DECORATOR static T
     load(T *ptr, flagcxDeviceMemoryOrder_t order) {
       (void)Scope;
-      // ivcore11 llc cannot select a 64-bit atomic load. Aligned 64-bit
-      // publication uses volatile loads; 32-bit relaxed loads stay atomic.
-      if (sizeof(T) != sizeof(uint32_t))
-        return *const_cast<volatile T *>(ptr);
-      switch (order) {
-        case flagcxDeviceMemoryOrderRelaxed:
-        case flagcxDeviceMemoryOrderRelease:
-          return __atomic_load_n(ptr, __ATOMIC_RELAXED);
-        case flagcxDeviceMemoryOrderAcquire:
-        case flagcxDeviceMemoryOrderAcqRel:
-        case flagcxDeviceMemoryOrderSeqCst:
-        default:
-          return *const_cast<volatile T *>(ptr);
-      }
+      (void)order;
+      return *const_cast<volatile T *>(ptr);
     }
 
     template <typename T, flagcxDeviceScope_t Scope = flagcxDeviceScopeSystem>
     FLAGCX_DEVICE_INLINE_DECORATOR static void
     store(T *ptr, const T &value, flagcxDeviceMemoryOrder_t order) {
       (void)Scope;
-      if (sizeof(T) != sizeof(uint32_t)) {
-        if (order != flagcxDeviceMemoryOrderRelaxed)
-          FLAGCX_DEVICE_THREAD_FENCE();
-        *const_cast<volatile T *>(ptr) = value;
-        return;
-      }
-      if (order == flagcxDeviceMemoryOrderRelaxed) {
-        __atomic_store_n(ptr, value, __ATOMIC_RELAXED);
-        return;
-      }
-      FLAGCX_DEVICE_THREAD_FENCE();
+      if (order != flagcxDeviceMemoryOrderRelaxed)
+        FLAGCX_DEVICE_THREAD_FENCE();
       *const_cast<volatile T *>(ptr) = value;
     }
 
