@@ -1050,12 +1050,8 @@ struct CommTraits<DefaultBackend<PlatformTag>> {
       int idx = _contextId * counterCount + (int)counterId;
       Atomic::store(&_dc.getCompletionCounterBuffer()[idx], CompletionWord{0},
                     flagcxDeviceMemoryOrderRelease);
-#ifdef FLAGCX_ILUVATAR_COUNTER_RESET_DRAIN
-      FLAGCX_ILUVATAR_COUNTER_RESET_DRAIN(idx);
-#else
       CompletionStorage::template resetProxy<Atomic>(
           counterBuffer, idx, flagcxDeviceMemoryOrderRelease);
-#endif
     }
   };
 };
